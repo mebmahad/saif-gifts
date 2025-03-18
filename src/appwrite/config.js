@@ -126,7 +126,7 @@ class Service {
 
     async login({ email, password }) {
         try {
-            return await this.account.createEmailSession(email, password);
+            return await this.account.createEmailPasswordSession(email, password);
         } catch (error) {
             console.error("Error logging in:", error);
             return null;

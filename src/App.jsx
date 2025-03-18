@@ -1,6 +1,5 @@
-// src/App.jsx
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import SidebarFilter from "./components/SidebarFilter";
 import ProductCard from "./components/ProductCard";
@@ -17,7 +16,7 @@ export default function App() {
   const [priceRange, setPriceRange] = useState([0, 5000]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [user, setUser] = useState(null); // Move user state here
+  const [user, setUser] = useState(null); // User state
 
   // Fetch products and user
   useEffect(() => {
@@ -40,18 +39,6 @@ export default function App() {
 
     fetchData();
   }, []);
-
-  // Handle login/logout globally
-  const handleLogin = async (email, password) => {
-    await service.login({ email, password });
-    const currentUser = await service.getCurrentUser();
-    setUser(currentUser);
-  };
-
-  const handleLogout = async () => {
-    await service.logout();
-    setUser(null);
-  };
 
   // Handle search
   const handleSearch = (query) => {
@@ -108,11 +95,7 @@ export default function App() {
   return (
     <Router>
       <div className="min-h-screen">
-        <Header
-          onSearch={handleSearch}
-          user={user}
-          onLogout={handleLogout}
-        />
+        <Header user={user} setUser={setUser} />
         <div className="flex">
           <SidebarFilter
             onPriceChange={handlePriceChange}
@@ -138,7 +121,7 @@ export default function App() {
               />
               <Route path="/product/:productId" element={<ProductDetails />} />
               <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<Login setUser={setUser} />} />
               <Route path="/signup" element={<Signup />} />
             </Routes>
           </main>

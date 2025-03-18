@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import service from "../appwrite/config";
 
-export default function Login() {
+export default function Login({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -11,7 +11,9 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      await handleLogin(email, password); // Use the global handler from App.jsx
+      await service.login({ email, password });
+      const currentUser = await service.getCurrentUser();
+      setUser(currentUser); // Update user state
       navigate("/");
     } catch (error) {
       setError("Invalid email or password");
