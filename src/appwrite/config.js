@@ -8,10 +8,10 @@ class Service {
             .setProject(conf.appwriteProjectId);
         this.databases = new Databases(this.client);
         this.storage = new Storage(this.client);
-        this.account = new Account(this.client); // Add Account service
+        this.account = new Account(this.client);
     }
 
-    // Fetch all products
+    // ==================== Product Functions ====================
     async getProducts() {
         try {
             const response = await this.databases.listDocuments(
@@ -25,42 +25,38 @@ class Service {
         }
     }
 
-    // Fetch a single product by ID
     async getProductById(productId) {
         try {
-            const response = await this.databases.getDocument(
+            return await this.databases.getDocument(
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdproducts,
                 productId
             );
-            return response;
         } catch (error) {
             console.error("Error fetching product:", error);
             return null;
         }
     }
 
-    // Upload an image to Appwrite Storage
     async uploadImage(file) {
         try {
             const response = await this.storage.createFile(
-                conf.appwriteBucketId, // Bucket ID
-                ID.unique(),           // Unique file ID
-                file                   // File object
+                conf.appwriteBucketId,
+                ID.unique(),
+                file
             );
-            return response.$id; // Return the file ID
+            return response; // Return full response object
         } catch (error) {
             console.error("Error uploading image:", error);
             return null;
         }
     }
 
-    // Get image preview URL
     getImagePreview(imageId) {
         try {
             return this.storage.getFilePreview(
-                conf.appwriteBucketId, // Bucket ID
-                imageId                // File ID
+                conf.appwriteBucketId,
+                imageId
             );
         } catch (error) {
             console.error("Error fetching image URL:", error);
@@ -68,39 +64,34 @@ class Service {
         }
     }
 
-    // Add a new product
-    async addProduct({ name, price, description, category, image_id }) {
+    async addProduct(productData) {
         try {
-            const response = await this.databases.createDocument(
+            return await this.databases.createDocument(
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdproducts,
-                ID.unique(), // Unique document ID
-                { name, price, description, category, image_id }
+                ID.unique(),
+                productData
             );
-            return response;
         } catch (error) {
             console.error("Error adding product:", error);
             return null;
         }
     }
 
-    // Update a product
-    async updateProduct(productId, { name, price, description, category, image_id }) {
+    async updateProduct(productId, productData) {
         try {
-            const response = await this.databases.updateDocument(
+            return await this.databases.updateDocument(
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdproducts,
                 productId,
-                { name, price, description, category, image_id }
+                productData
             );
-            return response;
         } catch (error) {
             console.error("Error updating product:", error);
             return null;
         }
     }
 
-    // Delete a product
     async deleteProduct(productId) {
         try {
             await this.databases.deleteDocument(
@@ -108,21 +99,36 @@ class Service {
                 conf.appwriteCollectionIdproducts,
                 productId
             );
-            return true; // Success
+            return true;
         } catch (error) {
             console.error("Error deleting product:", error);
             return false;
         }
     }
 
+    // ==================== Auth Functions ====================
     async createAccount({ email, password, name }) {
         try {
-            return await this.account.create(ID.unique(), email, password, name);
+          // 1. Create account
+          const userAccount = await this.account.create(ID.unique(), email, password, name);
+          
+          // 2. Create session
+          await this.login({ email, password });
+      
+          // 3. Create user document (now authenticated)
+          await this.databases.createDocument(
+            conf.appwriteDatabaseId,
+            conf.appwriteCollectionIdUsers,
+            userAccount.$id, // Use account ID as document ID
+            { email, name, role: "customer" }
+          );
+      
+          return userAccount;
         } catch (error) {
-            console.error("Error creating account:", error);
-            return null;
+          console.error("Error creating account:", error);
+          return null;
         }
-    }
+      }
 
     async login({ email, password }) {
         try {
@@ -151,10 +157,14 @@ class Service {
         }
     }
 
-    // ==================== Admin-Specific Functions ====================
+    // ==================== User Management ====================
     async getAllUsers() {
         try {
-            return await this.account.list();
+            const response = await this.databases.listDocuments(
+                conf.appwriteDatabaseId,
+                conf.appwriteCollectionIdUsers
+            );
+            return response.documents;
         } catch (error) {
             console.error("Error fetching users:", error);
             return [];
@@ -163,10 +173,9 @@ class Service {
 
     async updateUserRole(userId, role) {
         try {
-            // Requires a custom user collection in Appwrite (e.g., "users_metadata")
             return await this.databases.updateDocument(
                 conf.appwriteDatabaseId,
-                "users_metadata", // Create this collection in Appwrite
+                conf.appwriteCollectionIdUsers,
                 userId,
                 { role }
             );
@@ -175,6 +184,38 @@ class Service {
             return null;
         }
     }
+
+    // ==================== Order Management ====================
+
+    async createOrder({ userId, products, total }) {
+        try {
+          return await this.databases.createDocument(
+            conf.appwriteDatabaseId,
+            conf.appwriteCollectionIdorders,
+            "orders",
+            ID.unique(),
+            { userId, products, total, status: "pending" }
+          );
+        } catch (error) {
+          console.error("Error creating order:", error);
+          return null;
+        }
+      }
+      
+      async getOrdersByUser(userId) {
+        try {
+          const response = await this.databases.listDocuments(
+            conf.appwriteDatabaseId,
+            conf.appwriteCollectionIdorders,
+            "orders",
+            [Query.equal("userId", userId)]
+          );
+          return response.documents;
+        } catch (error) {
+          console.error("Error fetching orders:", error);
+          return [];
+        }
+      }
 }
 
 const service = new Service();

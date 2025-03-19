@@ -8,37 +8,29 @@ export default function AdminDashboard() {
     const [products, setProducts] = useState([]);
     const [users, setUsers] = useState([]);
 
-    // Check if user is admin
     useEffect(() => {
         const checkAdmin = async () => {
-            const currentUser = await service.getCurrentUser();
-            setUser(currentUser);
-            setLoading(false);
+            try {
+                const currentUser = await service.getCurrentUser();
+                setUser(currentUser);
+                
+                if (currentUser?.labels?.includes("admin")) {
+                    const productsData = await service.getProducts();
+                    const usersData = await service.getAllUsers();
+                    setProducts(productsData);
+                    setUsers(usersData);
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            } finally {
+                setLoading(false);
+            }
         };
         checkAdmin();
     }, []);
 
-    // Fetch all products and users (admin-only)
-    useEffect(() => {
-        if (user?.labels?.includes("admin")) {
-            const fetchData = async () => {
-                const products = await service.getProducts();
-                const users = await service.getAllUsers();
-                setProducts(products);
-                setUsers(users);
-            };
-            fetchData();
-        }
-    }, [user]);
-
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    // Redirect non-admin users
-    if (!user?.labels?.includes("admin")) {
-        return <Navigate to="/" />;
-    }
+    if (loading) return <div>Loading...</div>;
+    if (!user?.labels?.includes("admin")) return <Navigate to="/" />;
 
     return (
         <div className="min-h-screen p-8">
@@ -103,7 +95,7 @@ export default function AdminDashboard() {
                             </tr>
                         </thead>
                         <tbody>
-                            {users.map((user) => (
+                            {Array.isArray(users) && users.map((user) => (
                                 <tr key={user.$id} className="border-b">
                                     <td className="py-2">{user.name}</td>
                                     <td className="py-2">{user.email}</td>
