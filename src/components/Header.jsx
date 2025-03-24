@@ -1,15 +1,18 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import service from "../appwrite/config";
-import { useCart } from "../context/CartContext";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import service from '../appwrite/config';
 
-export default function Header({ user, setUser }) {
+export default function Header() {
   const navigate = useNavigate();
-  const { cartTotalItems } = useCart();
+  const { user, setUser } = useAuth(); // Get both user and setUser from AuthContext
+  const cart = useCart();
+  const cartTotalItems = cart?.cartTotalItems || 0;
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const handleMenuClick = (path) => {
-    setShowProfileMenu(false); // Close menu
+    setShowProfileMenu(false);
     navigate(path);
   };
 
@@ -17,7 +20,7 @@ export default function Header({ user, setUser }) {
     try {
       await service.logout();
       setUser(null);
-      setShowProfileMenu(false); // Close menu
+      setShowProfileMenu(false);
       navigate("/");
     } catch (error) {
       console.error("Error logging out:", error);
@@ -32,7 +35,7 @@ export default function Header({ user, setUser }) {
 
       <div className="flex items-center gap-6">
         {/* Admin Dashboard Link */}
-        {user?.labels?.includes("admin") && (
+        {user?.role === "admin" && (
           <Link
             to="/admin"
             className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600"

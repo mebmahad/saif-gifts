@@ -1,6 +1,9 @@
 import conf from '../conf/conf.js';
 import { Client, Account, ID, Databases, Storage, Query } from "appwrite";
 
+// Add default product image
+const defaultProductImage = '/images/default-product.png';
+
 class Service {
     constructor() {
         this.client = new Client()
@@ -54,13 +57,24 @@ class Service {
 
     getImagePreview(imageId) {
         try {
+            if (!imageId) {
+                return defaultProductImage;
+            }
             return this.bucket.getFilePreview(
                 conf.appwriteBucketId,
-                imageId
+                imageId,
+                // Adding preview parameters
+                {
+                    width: 400,
+                    height: 400,
+                    gravity: 'center',
+                    quality: 75,
+                    format: 'webp'
+                }
             );
         } catch (error) {
             console.error("Error fetching image URL:", error);
-            return null;
+            return defaultProductImage;
         }
     }
 
@@ -130,12 +144,42 @@ class Service {
         }
       }
 
-    async login({ email, password }) {
+    async login(email, password) {
         try {
-            return await this.account.createEmailPasswordSession(email, password);
-        } catch (error) {
-            console.error("Error logging in:", error);
+            const session = await this.account.createEmailPasswordSession(email, password);
+            if (session) {
+                const userData = await this.account.get();
+                // Get additional user data from database
+                const userDoc = await this.databases.listDocuments(
+                    conf.appwriteDatabaseId,
+                    conf.appwriteCollectionIdUsers,
+                    [Query.equal('$id', userData.$id)]
+                );
+                return {
+                    ...userData,
+                    role: userDoc.documents[0]?.role || 'customer'
+                };
+            }
             return null;
+        } catch (error) {
+            if (error.message.includes('Rate limit')) {
+                throw new Error('Too many login attempts. Please wait a few minutes and try again.');
+            } else if (error.message.includes('Invalid credentials')) {
+                throw new Error('Invalid email or password');
+            } else {
+                console.error("Error logging in:", error);
+                throw new Error('An error occurred during login. Please try again later.');
+            }
+        }
+    }
+
+    async logout() {
+        try {
+            await this.account.deleteSessions();
+            return true;
+        } catch (error) {
+            console.error("Error logging out:", error);
+            return false;
         }
     }
 
@@ -190,9 +234,9 @@ class Service {
     // Add new method for creating orders
     async createOrder(userId, orderDetails) {
         try {
-            const response = await databases.createDocument(
-                conf.databaseId,
-                conf.ordersCollectionId,
+            const response = await this.databases.createDocument(
+                conf.appwriteDatabaseId,
+                conf.appwriteCollectionIdorders,
                 ID.unique(),
                 {
                     userId: userId,
@@ -224,6 +268,50 @@ class Service {
         } catch (error) {
             console.error("Appwrite service :: getUserOrders :: error", error);
             return [];
+        }
+    }
+
+    // Add method to fetch all orders
+    async getAllOrders() {
+        try {
+            const response = await this.databases.listDocuments(
+                conf.appwriteDatabaseId,
+                conf.appwriteCollectionIdorders,
+                [Query.orderDesc('$createdAt')]
+            );
+            return response.documents;
+        } catch (error) {
+            console.error("Error fetching all orders:", error);
+            return [];
+        }
+    }
+
+    // Add method to update order status
+    async updateOrderStatus(orderId, status) {
+        try {
+            return await this.databases.updateDocument(
+                conf.appwriteDatabaseId,
+                conf.appwriteCollectionIdorders,
+                orderId,
+                { status }
+            );
+        } catch (error) {
+            console.error("Error updating order status:", error);
+            return null;
+        }
+    }
+    // Add this method to your Service class
+    async getUserData(userId) {
+        try {
+            const response = await this.databases.listDocuments(
+                conf.appwriteDatabaseId,
+                conf.appwriteCollectionIdUsers,
+                [Query.equal('$id', userId)]
+            );
+            return response.documents[0] || null;
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+            return null;
         }
     }
 }

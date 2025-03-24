@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import service from '../appwrite/config';
+import { useAuth } from '../context/AuthContext';
 
 const CheckoutPage = () => {
-  const { cart, clearCart } = useCart();  // Add clearCart to the destructured values
+  const { cartItems, clearCart } = useCart();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
-  // Calculate total price using the same logic as CartPage
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // Calculate total price with null check
+  const subtotal = cartItems?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
   const taxRate = 0.1;
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
@@ -34,7 +36,7 @@ const CheckoutPage = () => {
     e.preventDefault();
     const orderDetails = {
       shippingDetails,
-      cart,
+      cart: cartItems, // Changed from cart to cartItems
       subtotal,
       tax,
       totalAmount: total,
@@ -142,8 +144,8 @@ const CheckoutPage = () => {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
             <div className="space-y-4">
-              {cart.map((item) => (
-                <div key={item.$id} className="flex justify-between items-center">
+              {cartItems.map((item) => ( // Changed from cart to cartItems
+                <div key={item.id} className="flex justify-between items-center">
                   <div>
                     <p className="font-semibold">{item.name}</p>
                     <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>

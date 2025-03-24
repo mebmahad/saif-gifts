@@ -8,18 +8,26 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const checkUser = async () => {
+            try {
+                const currentUser = await service.getCurrentUser();
+                if (currentUser) {
+                    // Get additional user data including role
+                    const userData = await service.getUserData(currentUser.$id);
+                    setUser({ ...currentUser, ...userData });
+                } else {
+                    setUser(null);
+                }
+            } catch (error) {
+                console.error("Auth check error:", error);
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         checkUser();
     }, []);
-
-    const checkUser = async () => {
-        try {
-            const currentUser = await service.getCurrentUser();
-            setUser(currentUser);
-        } catch (error) {
-            console.error(error);
-        }
-        setLoading(false);
-    };
 
     const value = {
         user,

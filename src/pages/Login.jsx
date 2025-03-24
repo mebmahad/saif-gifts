@@ -1,24 +1,47 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import service from "../appwrite/config";
+import { useAuth } from "../context/AuthContext";
 
-export default function Login({ setUser }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+export default function Login() {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const navigate = useNavigate();
+    const { setUser } = useAuth();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      await service.login({ email, password });
-      const currentUser = await service.getCurrentUser();
-      setUser(currentUser); // Update user state
-      navigate("/");
-    } catch (error) {
-      setError("Invalid email or password");
-    }
-  };
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setError('');
+        try {
+            // First, try to logout any existing session
+            await service.logout();
+            
+            // Then proceed with login
+            const user = await service.login(email, password);
+            if (user) {
+                setUser(user);
+                navigate('/');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            if (error.message.includes('session is active')) {
+                try {
+                    // If session error occurs, try logging out and logging in again
+                    await service.logout();
+                    const user = await service.login(email, password);
+                    if (user) {
+                        setUser(user);
+                        navigate('/');
+                    }
+                } catch (retryError) {
+                    setError('An error occurred during login. Please try again.');
+                }
+            } else {
+                setError(error.message || 'An error occurred during login');
+            }
+        }
+    };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
