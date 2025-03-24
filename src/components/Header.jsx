@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import service from "../appwrite/config";
 import { useCart } from "../context/CartContext";
@@ -6,11 +6,18 @@ import { useCart } from "../context/CartContext";
 export default function Header({ user, setUser }) {
   const navigate = useNavigate();
   const { cartTotalItems } = useCart();
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  const handleMenuClick = (path) => {
+    setShowProfileMenu(false); // Close menu
+    navigate(path);
+  };
 
   const handleLogout = async () => {
     try {
       await service.logout();
       setUser(null);
+      setShowProfileMenu(false); // Close menu
       navigate("/");
     } catch (error) {
       console.error("Error logging out:", error);
@@ -19,8 +26,9 @@ export default function Header({ user, setUser }) {
 
   return (
     <header className="bg-gift-primary text-white p-4 flex justify-between items-center shadow-lg">
-      {/* Logo */}
-      <h1 className="text-2xl font-bold">Saif Gifts 🎁</h1>
+      <Link to={"/"} className="text-2xl font-bold">
+        Saif Gifts 🎁
+      </Link>
 
       <div className="flex items-center gap-6">
         {/* Admin Dashboard Link */}
@@ -56,17 +64,45 @@ export default function Header({ user, setUser }) {
           )}
         </Link>
 
-        {/* Login/Signup or Logout */}
-        <div className="flex gap-4">
+        {/* User Profile or Login/Signup */}
+        <div className="relative">
           {user ? (
-            <button
-              onClick={handleLogout}
-              className="bg-gift-secondary px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              Logout
-            </button>
-          ) : (
             <>
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center space-x-2 hover:opacity-80"
+              >
+                <div className="w-8 h-8 bg-gift-secondary rounded-full flex items-center justify-center">
+                  {user.name?.charAt(0) || "U"}
+                </div>
+                <span>{user.name || "User"}</span>
+              </button>
+
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-50">
+                  <button
+                    onClick={() => handleMenuClick('/profile')}
+                    className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
+                  >
+                    Profile
+                  </button>
+                  <button
+                    onClick={() => handleMenuClick('/orders')}
+                    className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
+                  >
+                    Order History
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex gap-4">
               <Link
                 to="/login"
                 className="bg-gift-secondary px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
@@ -79,7 +115,7 @@ export default function Header({ user, setUser }) {
               >
                 Sign Up
               </Link>
-            </>
+            </div>
           )}
         </div>
       </div>

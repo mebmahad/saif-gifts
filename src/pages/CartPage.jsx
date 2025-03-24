@@ -1,11 +1,12 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";
 
 export default function CartPage() {
   const { cart, removeFromCart, clearCart, increaseQuantity, decreaseQuantity } =
     useCart();
-
+  const navigate = useNavigate();
   // Calculate subtotal
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -105,12 +106,12 @@ export default function CartPage() {
                 >
                   Continue Shopping
                 </Link>
-                <button
-                  onClick={() => alert("Proceeding to checkout...")} // Placeholder for checkout functionality
+                <Link
+                  to="/checkout"
                   className="bg-green-500 text-white px-4 py-2 rounded-lg mt-4 ml-4 hover:bg-green-600"
                 >
                   Proceed to Checkout
-                </button>
+                </Link>
               </div>
             </div>
           </>

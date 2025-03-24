@@ -1,14 +1,14 @@
 import conf from '../conf/conf.js';
-import { Client, ID, Databases, Storage, Query, Account } from "appwrite";
+import { Client, Account, ID, Databases, Storage, Query } from "appwrite";
 
 class Service {
     constructor() {
         this.client = new Client()
             .setEndpoint(conf.appwriteUrl)
             .setProject(conf.appwriteProjectId);
-        this.databases = new Databases(this.client);
-        this.storage = new Storage(this.client);
         this.account = new Account(this.client);
+        this.databases = new Databases(this.client);
+        this.bucket = new Storage(this.client);
     }
 
     // ==================== Product Functions ====================
@@ -40,12 +40,12 @@ class Service {
 
     async uploadImage(file) {
         try {
-            const response = await this.storage.createFile(
+            const response = await this.bucket.createFile(
                 conf.appwriteBucketId,
                 ID.unique(),
                 file
             );
-            return response; // Return full response object
+            return response;
         } catch (error) {
             console.error("Error uploading image:", error);
             return null;
@@ -54,7 +54,7 @@ class Service {
 
     getImagePreview(imageId) {
         try {
-            return this.storage.getFilePreview(
+            return this.bucket.getFilePreview(
                 conf.appwriteBucketId,
                 imageId
             );
@@ -187,35 +187,45 @@ class Service {
 
     // ==================== Order Management ====================
 
-    async createOrder({ userId, products, total }) {
+    // Add new method for creating orders
+    async createOrder(userId, orderDetails) {
         try {
-          return await this.databases.createDocument(
-            conf.appwriteDatabaseId,
-            conf.appwriteCollectionIdorders,
-            "orders",
-            ID.unique(),
-            { userId, products, total, status: "pending" }
-          );
+            const response = await databases.createDocument(
+                conf.databaseId,
+                conf.ordersCollectionId,
+                ID.unique(),
+                {
+                    userId: userId,
+                    total: Math.round(orderDetails.totalAmount),
+                    status: 'pending',
+                    shippingDetails: JSON.stringify(orderDetails.shippingDetails),
+                    products: JSON.stringify(orderDetails.cart)
+                }
+            );
+            return response;
         } catch (error) {
-          console.error("Error creating order:", error);
-          return null;
+            console.error("Appwrite service :: createOrder :: error", error);
+            return false;
         }
-      }
-      
-      async getOrdersByUser(userId) {
+    }
+
+    // Add method to fetch user orders
+    async getUserOrders(userId) {
         try {
-          const response = await this.databases.listDocuments(
-            conf.appwriteDatabaseId,
-            conf.appwriteCollectionIdorders,
-            "orders",
-            [Query.equal("userId", userId)]
-          );
-          return response.documents;
+            const response = await this.databases.listDocuments(
+                conf.appwriteDatabaseId,
+                conf.appwriteCollectionIdorders,
+                [
+                    Query.equal('userId', userId),
+                    Query.orderDesc('$createdAt')
+                ]
+            );
+            return response.documents;
         } catch (error) {
-          console.error("Error fetching orders:", error);
-          return [];
+            console.error("Appwrite service :: getUserOrders :: error", error);
+            return [];
         }
-      }
+    }
 }
 
 const service = new Service();

@@ -14,6 +14,10 @@ import { CartProvider } from "./context/CartContext";
 import CartPage from "./pages/CartPage";
 import OrderHistory from "./pages/OrderHistory";
 import ErrorBoundary from "./components/ErrorBoundary";
+import CheckoutPage from './pages/CheckoutPage';
+import InvoicePage from './pages/InvoicePage';
+import { AuthProvider } from './context/AuthContext';
+import Profile from './pages/Profile';
 
 export default function App() {
   const [products, setProducts] = useState([]);
@@ -99,49 +103,53 @@ export default function App() {
   }
 
   return (
-    <CartProvider>
-      <Router>
-        <div className="min-h-screen">
-          <Header user={user} setUser={setUser} />
-          <div className="flex">
-            <SidebarFilter
-              onPriceChange={handlePriceChange}
-              onCategoryChange={handleCategoryChange}
-            />
-            <main className="flex-1 p-8">
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredProducts.length > 0 ? (
-                        filteredProducts.map((product) => (
-                          <ProductCard key={product.$id} product={product} />
-                        ))
-                      ) : (
-                        <p className="text-gray-600 col-span-full text-center mt-8">
-                          No products found. Try adjusting your filters.
-                        </p>
-                      )}
+    <AuthProvider>
+        <CartProvider>
+            <Router>
+                <div className="min-h-screen">
+                    <Header user={user} setUser={setUser} />
+                    <div className="flex">
+                        <SidebarFilter
+                            onPriceChange={handlePriceChange}
+                            onCategoryChange={handleCategoryChange}
+                        />
+                        <main className="flex-1 p-8">
+                            <Routes>
+                                <Route
+                                    path="/"
+                                    element={
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {filteredProducts.length > 0 ? (
+                                                filteredProducts.map((product) => (
+                                                    <ProductCard key={product.$id} product={product} />
+                                                ))
+                                            ) : (
+                                                <p className="text-gray-600 col-span-full text-center mt-8">
+                                                    No products found. Try adjusting your filters.
+                                                </p>
+                                            )}
+                                        </div>
+                                    }
+                                />
+                                <Route path="/product/:productId" element={<ProductDetails />} />
+                                <Route path="/admin" element={<AdminDashboard />} />
+                                <Route path="/login" element={<Login setUser={setUser} />} />
+                                <Route path="/signup" element={<Signup />} />
+                                <Route path="/admin/add-product" element={<AddProductPage />} />
+                                <Route path="/checkout" element={<CheckoutPage />} />
+                                <Route path="/invoice" element={<InvoicePage />} />
+                                <Route path="/admin/edit-product/:productId" element={<EditProductPage />} />
+                                <Route path="/cart" element={<CartPage />} />
+                                
+                                {/* New routes for profile and orders */}
+                                <Route path="/profile" element={<Profile user={user} setUser={setUser} />} />
+                                <Route path="/orders" element={<OrderHistory />} />
+                            </Routes>
+                        </main>
                     </div>
-                  }
-                />
-                <Route path="/product/:productId" element={<ProductDetails />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/login" element={<Login setUser={setUser} />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/admin/add-product" element={<AddProductPage />} />
-                <Route
-                  path="/admin/edit-product/:productId"
-                  element={<EditProductPage />}
-                />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/orders" element={<OrderHistory />} />
-              </Routes>
-            </main>
-          </div>
-        </div>
-      </Router>
-    </CartProvider>
+                </div>
+            </Router>
+        </CartProvider>
+    </AuthProvider>
   );
 }
