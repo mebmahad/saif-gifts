@@ -55,23 +55,13 @@ class Service {
         }
     }
 
-    getImagePreview(imageId) {
+     getImagePreview(file_Id) {
         try {
-            if (!imageId) {
-                return defaultProductImage;
-            }
-            return this.bucket.getFilePreview(
+        const response =  this.bucket.getFilePreview(
                 conf.appwriteBucketId,
-                imageId,
-                // Adding preview parameters
-                {
-                    width: 400,
-                    height: 400,
-                    gravity: 'center',
-                    quality: 75,
-                    format: 'webp'
-                }
+                file_Id,
             );
+            return response;
         } catch (error) {
             console.error("Error fetching image URL:", error);
             return defaultProductImage;
@@ -185,7 +175,8 @@ class Service {
 
     async getCurrentUser() {
         try {
-            return await this.account.get();
+            const user = await this.account.get();
+            return user;
         } catch (error) {
             console.error("Error fetching current user:", error);
             return null;

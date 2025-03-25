@@ -9,9 +9,9 @@ export default function ProductCard({ product }) {
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="aspect-w-1 aspect-h-1">
-                {product.image ? (
+                {product.image_id ? (
                     <img
-                        src={service.getImagePreview(product.image)}
+                        src={service.getImagePreview(product.image_id)}
                         alt={product.name}
                         className="w-full h-64 object-cover"
                         onError={(e) => {
