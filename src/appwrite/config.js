@@ -1,7 +1,6 @@
 import conf from '../conf/conf.js';
 import { Client, Account, ID, Databases, Storage, Query } from "appwrite";
 
-// Add default product image
 const defaultProductImage = '/images/default-product.png';
 
 class Service {
@@ -12,6 +11,18 @@ class Service {
         this.account = new Account(this.client);
         this.databases = new Databases(this.client);
         this.bucket = new Storage(this.client);
+        this.currentSession = null;
+    }
+
+    // ==================== Session Management ====================
+    async checkSession() {
+        try {
+            this.currentSession = await this.account.getSession('current');
+            return true;
+        } catch (error) {
+            this.currentSession = null;
+            return false;
+        }
     }
 
     // ==================== Product Functions ====================
@@ -21,10 +32,10 @@ class Service {
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdproducts
             );
-            return response.documents;
+            return response.documents; // Always return the array directly
         } catch (error) {
             console.error("Error fetching products:", error);
-            return [];
+            return []; // Return empty array on error
         }
     }
 
@@ -43,32 +54,27 @@ class Service {
 
     async uploadImage(file) {
         try {
-            const response = await this.bucket.createFile(
+            return await this.bucket.createFile(
                 conf.appwriteBucketId,
                 ID.unique(),
                 file
             );
-            return response;
         } catch (error) {
             console.error("Error uploading image:", error);
             return null;
         }
     }
 
-     getImagePreview(file_Id) {
+    getImagePreview(fileId) {
         try {
-        const response =  this.bucket.getFilePreview(
-                conf.appwriteBucketId,
-                file_Id,
-            );
-            return response;
+            return this.bucket.getFilePreview(conf.appwriteBucketId, fileId);
         } catch (error) {
             console.error("Error fetching image URL:", error);
             return defaultProductImage;
         }
     }
 
-    async addProduct(productData) {
+    async createProduct(productData) {
         try {
             return await this.databases.createDocument(
                 conf.appwriteDatabaseId,
@@ -113,86 +119,107 @@ class Service {
     // ==================== Auth Functions ====================
     async createAccount({ email, password, name }) {
         try {
-          // 1. Create account
-          const userAccount = await this.account.create(ID.unique(), email, password, name);
-          
-          // 2. Create session
-          await this.login({ email, password });
-      
-          // 3. Create user document (now authenticated)
-          await this.databases.createDocument(
-            conf.appwriteDatabaseId,
-            conf.appwriteCollectionIdUsers,
-            userAccount.$id, // Use account ID as document ID
-            { email, name, role: "customer" }
-          );
-      
-          return userAccount;
+            const userAccount = await this.account.create(ID.unique(), email, password, name);
+            await this.account.createEmailPasswordSession(email, password);
+            
+            // Ensure user document creation
+            const userDoc = await this.databases.createDocument(
+                conf.appwriteDatabaseId,
+                conf.appwriteCollectionIdUsers,
+                userAccount.$id,
+                {
+                    email,
+                    name,
+                    role: "customer",
+                    createdAt: new Date().toISOString()
+                }
+            );
+    
+            return { ...userAccount, ...userDoc };
         } catch (error) {
-          console.error("Error creating account:", error);
-          return null;
+            // Delete account if document creation fails
+            if (userAccount?.$id) {
+                await this.account.delete(userAccount.$id);
+            }
+            throw error;
         }
-      }
+    }
 
     async login(email, password) {
         try {
-            const session = await this.account.createEmailPasswordSession(email, password);
-            if (session) {
-                const userData = await this.account.get();
-                // Get additional user data from database
-                const userDoc = await this.databases.listDocuments(
-                    conf.appwriteDatabaseId,
-                    conf.appwriteCollectionIdUsers,
-                    [Query.equal('$id', userData.$id)]
-                );
-                return {
-                    ...userData,
-                    role: userDoc.documents[0]?.role || 'customer'
-                };
-            }
-            return null;
+            await this.account.createEmailPasswordSession(email, password);
+            const userAccount = await this.account.get();
+            const userData = await this.getUserData(userAccount.$id);
+            
+            return {
+                ...userAccount,
+                role: userData?.role || 'customer'
+            };
         } catch (error) {
-            if (error.message.includes('Rate limit')) {
-                throw new Error('Too many login attempts. Please wait a few minutes and try again.');
-            } else if (error.message.includes('Invalid credentials')) {
-                throw new Error('Invalid email or password');
-            } else {
-                console.error("Error logging in:", error);
-                throw new Error('An error occurred during login. Please try again later.');
+            console.error("Error logging in:", error);
+            if (error.type === 'too_many_requests') {
+                throw new Error('Too many attempts. Please try again later.');
             }
+            throw new Error('Invalid email or password');
         }
     }
 
     async logout() {
         try {
-            await this.account.deleteSessions();
+            if (await this.checkSession()) {
+                await this.account.deleteSession('current');
+            }
+            this.currentSession = null;
             return true;
         } catch (error) {
-            console.error("Error logging out:", error);
+            console.error("Logout error:", error);
             return false;
         }
     }
 
     async getCurrentUser() {
         try {
-            const user = await this.account.get();
-            return user;
+            const userAccount = await this.account.get();
+            const userData = await this.getUserData(userAccount.$id);
+            return { 
+                ...userAccount,
+                role: userData?.role || 'customer',
+                name: userData?.name || 'User'
+            };
         } catch (error) {
             console.error("Error fetching current user:", error);
             return null;
         }
     }
 
-    async logout() {
+    // ==================== User Management ====================
+    async getUserData(userId) {
         try {
-            return await this.account.deleteSessions();
+            return await this.databases.getDocument(
+                conf.appwriteDatabaseId,
+                conf.appwriteCollectionIdUsers,
+                userId
+            );
         } catch (error) {
-            console.error("Error logging out:", error);
+            // Create missing user document
+            if (error.code === 404) {
+                console.warn(`User document missing for ${userId}, creating default...`);
+                return await this.databases.createDocument(
+                    conf.appwriteDatabaseId,
+                    conf.appwriteCollectionIdUsers,
+                    userId,
+                    {
+                        role: 'customer',
+                        name: 'User',
+                        email: 'missing@example.com'
+                    }
+                );
+            }
+            console.error("Error fetching user data:", error);
             return null;
         }
     }
 
-    // ==================== User Management ====================
     async getAllUsers() {
         try {
             const response = await this.databases.listDocuments(
@@ -216,35 +243,31 @@ class Service {
             );
         } catch (error) {
             console.error("Error updating user role:", error);
-            return null;
+            throw error;
         }
     }
 
     // ==================== Order Management ====================
-
-    // Add new method for creating orders
     async createOrder(userId, orderDetails) {
         try {
-            const response = await this.databases.createDocument(
+            return await this.databases.createDocument(
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdorders,
                 ID.unique(),
                 {
-                    userId: userId,
+                    userId,
                     total: Math.round(orderDetails.totalAmount),
                     status: 'pending',
                     shippingDetails: JSON.stringify(orderDetails.shippingDetails),
                     products: JSON.stringify(orderDetails.cart)
                 }
             );
-            return response;
         } catch (error) {
-            console.error("Appwrite service :: createOrder :: error", error);
-            return false;
+            console.error("Error creating order:", error);
+            throw error;
         }
     }
 
-    // Add method to fetch user orders
     async getUserOrders(userId) {
         try {
             const response = await this.databases.listDocuments(
@@ -257,12 +280,11 @@ class Service {
             );
             return response.documents;
         } catch (error) {
-            console.error("Appwrite service :: getUserOrders :: error", error);
+            console.error("Error fetching user orders:", error);
             return [];
         }
     }
 
-    // Add method to fetch all orders
     async getAllOrders() {
         try {
             const response = await this.databases.listDocuments(
@@ -277,7 +299,6 @@ class Service {
         }
     }
 
-    // Add method to update order status
     async updateOrderStatus(orderId, status) {
         try {
             return await this.databases.updateDocument(
@@ -288,21 +309,7 @@ class Service {
             );
         } catch (error) {
             console.error("Error updating order status:", error);
-            return null;
-        }
-    }
-    // Add this method to your Service class
-    async getUserData(userId) {
-        try {
-            const response = await this.databases.listDocuments(
-                conf.appwriteDatabaseId,
-                conf.appwriteCollectionIdUsers,
-                [Query.equal('$id', userId)]
-            );
-            return response.documents[0] || null;
-        } catch (error) {
-            console.error("Error fetching user data:", error);
-            return null;
+            throw error;
         }
     }
 }

@@ -1,82 +1,70 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import service from "../appwrite/config";
-import { useAuth } from "../context/AuthContext";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import service from '../appwrite/config';
 
 export default function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    
+    // Properly destructure setUser from useAuth
     const { setUser } = useAuth();
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setLoading(true);
         setError('');
+
         try {
-            // First, try to logout any existing session
-            await service.logout();
-            
-            // Then proceed with login
             const user = await service.login(email, password);
             if (user) {
-                setUser(user);
+                setUser(user); // This will now work correctly
                 navigate('/');
             }
         } catch (error) {
+            setError(error.message || 'Login failed. Please try again.');
             console.error('Login error:', error);
-            if (error.message.includes('session is active')) {
-                try {
-                    // If session error occurs, try logging out and logging in again
-                    await service.logout();
-                    const user = await service.login(email, password);
-                    if (user) {
-                        setUser(user);
-                        navigate('/');
-                    }
-                } catch (retryError) {
-                    setError('An error occurred during login. Please try again.');
-                }
-            } else {
-                setError(error.message || 'An error occurred during login');
-            }
+        } finally {
+            setLoading(false);
         }
     };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary"
-          />
-          <button
-            type="submit"
-            className="w-full bg-gift-primary text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            Login
-          </button>
-        </form>
-        <p className="mt-4 text-center">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-gift-primary hover:underline">
-            Sign Up
-          </Link>
-        </p>
-      </div>
-    </div>
-  );
+    return (
+        <div className="max-w-md mx-auto p-6">
+            <h2 className="text-2xl font-bold mb-6">Login</h2>
+            {error && <div className="text-red-500 mb-4">{error}</div>}
+            <form onSubmit={handleLogin}>
+                <div className="mb-4">
+                    <label className="block mb-2">Email</label>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full p-2 border rounded"
+                        required
+                    />
+                </div>
+                <div className="mb-4">
+                    <label className="block mb-2">Password</label>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full p-2 border rounded"
+                        required
+                    />
+                </div>
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
+                >
+                    {loading ? 'Logging in...' : 'Login'}
+                </button>
+            </form>
+        </div>
+    );
 }

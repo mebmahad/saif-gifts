@@ -15,6 +15,7 @@ import CheckoutPage from './pages/CheckoutPage';
 import InvoicePage from './pages/InvoicePage';
 import OrderHistory from './pages/OrderHistory';
 import Profile from './pages/Profile';
+import AddProductPage from './pages/AddProductPage';
 import { AuthProvider } from './context/AuthContext';
 import { PrivateRoute, PublicRoute, AdminRoute } from './components/ProtectedRoutes';
 
@@ -37,6 +38,7 @@ function App() {
                 <Route path="/orders" element={<OrderHistory />} />
                 <Route path="/admin/*" element={<AdminDashboard />} />
                 <Route path="/admin/edit-product/:productId" element={<EditProductPage />} />
+                <Route path="/admin/add-product" element={<AddProductPage />} />
               </Routes>
             </main>
             <Footer />

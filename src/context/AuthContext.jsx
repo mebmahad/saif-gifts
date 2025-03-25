@@ -4,44 +4,74 @@ import service from '../appwrite/config';
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [authState, setAuthState] = useState({
+        user: null,
+        loading: true,
+        error: null
+    });
+
+    const checkAuth = async () => {
+        try {
+            setAuthState(prev => ({ ...prev, loading: true, error: null }));
+            const user = await service.getCurrentUser();
+            
+            if (user?.$id) {
+                setAuthState({
+                    user,
+                    loading: false,
+                    error: null
+                });
+            } else {
+                setAuthState({
+                    user: null,
+                    loading: false,
+                    error: null
+                });
+            }
+        } catch (error) {
+            console.error("Auth check error:", error);
+            setAuthState({
+                user: null,
+                loading: false,
+                error: error.message || "Failed to check authentication status"
+            });
+        }
+    };
+
+    const setUser = (userData) => {
+        setAuthState(prev => ({
+            ...prev,
+            user: userData
+        }));
+    };
+
+    const updateUser = async () => {
+        await checkAuth();
+    };
 
     useEffect(() => {
-        const checkUser = async () => {
-            try {
-                const currentUser = await service.getCurrentUser();
-                if (currentUser) {
-                    // Get additional user data including role
-                    const userData = await service.getUserData(currentUser.$id);
-                    setUser({ ...currentUser, ...userData });
-                } else {
-                    setUser(null);
-                }
-            } catch (error) {
-                console.error("Auth check error:", error);
-                setUser(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        checkUser();
+        checkAuth();
     }, []);
 
     const value = {
-        user,
+        user: authState.user,
         setUser,
-        loading
+        loading: authState.loading,
+        error: authState.error,
+        updateUser
     };
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {!authState.loading && children}
         </AuthContext.Provider>
     );
 }
 
-export function useAuth() {
-    return useContext(AuthContext);
-}
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+};

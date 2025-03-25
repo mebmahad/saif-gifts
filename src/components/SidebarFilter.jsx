@@ -4,7 +4,7 @@ import "rc-slider/assets/index.css";
 
 export default function SidebarFilter({ onPriceChange, onCategoryChange }) {
   const [priceRange, setPriceRange] = useState([0, 5000]);
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   // Handle price range change
   const handlePriceChange = (value) => {
@@ -14,11 +14,8 @@ export default function SidebarFilter({ onPriceChange, onCategoryChange }) {
 
   // Handle category selection
   const handleCategoryChange = (category) => {
-    const updatedCategories = selectedCategories.includes(category)
-      ? selectedCategories.filter((cat) => cat !== category) // Deselect if already selected
-      : [...selectedCategories, category]; // Add to selection
-    setSelectedCategories(updatedCategories);
-    onCategoryChange(updatedCategories); // Pass the updated categories to the parent component
+    setSelectedCategory(category);
+    onCategoryChange(category); // Pass the selected category to the parent component
   };
 
   return (
@@ -31,16 +28,18 @@ export default function SidebarFilter({ onPriceChange, onCategoryChange }) {
         max={5000}
         value={priceRange}
         onChange={handlePriceChange}
-        trackStyle={{ backgroundColor: "#6D28D9", height: "4px" }}
+        trackStyle={{ backgroundColor: "#6D28D9", height: "6px" }}
         handleStyle={{
           borderColor: "#6D28D9",
-          backgroundColor: "#6D28D9",
-          boxShadow: "none",
-          width: "16px",
-          height: "16px",
-          marginTop: "-6px",
+          backgroundColor: "white",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+          border: "2px solid #6D28D9",
+          width: "20px",
+          height: "20px",
+          marginTop: "-8px",
+          cursor: "pointer"
         }}
-        railStyle={{ backgroundColor: "#E5E7EB", height: "4px" }}
+        railStyle={{ backgroundColor: "#E5E7EB", height: "6px" }}
       />
       <div className="mt-2 text-sm text-gray-600">
         Price: ₹{priceRange[0]} - ₹{priceRange[1]}
@@ -53,7 +52,7 @@ export default function SidebarFilter({ onPriceChange, onCategoryChange }) {
           <li
             key={category}
             className={`text-gray-600 hover:text-gift-secondary cursor-pointer ${
-              selectedCategories.includes(category) ? "font-bold text-gift-secondary" : ""
+              selectedCategory === category ? "font-bold text-gift-secondary" : ""
             }`}
             onClick={() => handleCategoryChange(category)}
           >
