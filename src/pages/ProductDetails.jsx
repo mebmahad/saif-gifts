@@ -94,13 +94,13 @@ export default function ProductDetails() {
             <div className="bg-gray-100 rounded-lg overflow-hidden relative">
               {imageIds.length > 0 ? (
                 <>
-                  <div className="relative aspect-square w-full mb-4">
+                  <div className="relative aspect-square w-full mb-4 overflow-hidden">
                     {imageIds.map((imageId, index) => (
-                      <div key={imageId} className="absolute inset-0 h-full w-full">
+                      <div key={imageId} className="absolute inset-0 h-full w-full transform transition-opacity duration-500 ease-in-out">
                         <img
                           src={service.getImagePreview(imageId)}
                           alt={`${product.name} - Image ${index + 1}`}
-                          className={`w-full h-full object-contain transition-all duration-500 ${index === currentImageIndex ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+                          className={`w-full h-full object-contain ${index === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
                           onError={handleImageError}
                           loading="lazy"
                         />
