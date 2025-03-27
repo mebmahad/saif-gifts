@@ -14,6 +14,21 @@ class Service {
         this.currentSession = null;
     }
 
+    // ==================== Helper Methods ====================
+    #normalizeImageIds(images) {
+        if (!images) return '[]';
+        if (Array.isArray(images)) return JSON.stringify(images);
+        if (typeof images === 'string') {
+            try {
+                JSON.parse(images);
+                return images;
+            } catch {
+                return JSON.stringify([images]);
+            }
+        }
+        return '[]';
+    }
+
     // ==================== Session Management ====================
     async checkSession() {
         try {
@@ -32,10 +47,10 @@ class Service {
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdproducts
             );
-            return response.documents; // Always return the array directly
+            return response.documents;
         } catch (error) {
             console.error("Error fetching products:", error);
-            return []; // Return empty array on error
+            return [];
         }
     }
 
@@ -52,35 +67,59 @@ class Service {
         }
     }
 
+    async uploadImages(files) {
+        try {
+            const uploadPromises = files.map(file => 
+                this.bucket.createFile(
+                    conf.appwriteBucketId,
+                    ID.unique(),
+                    file
+                )
+            );
+            const results = await Promise.all(uploadPromises);
+            return results.map(result => result.$id);
+        } catch (error) {
+            console.error("Error uploading images:", error);
+            return [];
+        }
+    }
+
     async uploadImage(file) {
         try {
-            return await this.bucket.createFile(
+            const result = await this.bucket.createFile(
                 conf.appwriteBucketId,
                 ID.unique(),
                 file
             );
+            return result;
         } catch (error) {
             console.error("Error uploading image:", error);
             return null;
         }
     }
 
-    getImagePreview(fileId) {
-        try {
-            return this.bucket.getFilePreview(conf.appwriteBucketId, fileId);
-        } catch (error) {
-            console.error("Error fetching image URL:", error);
-            return defaultProductImage;
-        }
+    // In config.js - Fix the getImagePreview method
+getImagePreview(fileId) {
+    if (!fileId) return defaultProductImage;
+    try {
+        // Add .href to get the actual URL string
+        return this.bucket.getFilePreview(conf.appwriteBucketId, fileId);
+    } catch (error) {
+        console.error("Error fetching image URL:", error);
+        return defaultProductImage;
     }
+}
 
     async createProduct(productData) {
         try {
+            const imageIds = this.#normalizeImageIds(productData.image_ids);
+            const { image_ids, ...cleanData } = productData;
+            
             return await this.databases.createDocument(
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdproducts,
                 ID.unique(),
-                productData
+                { ...cleanData, image_ids: imageIds }
             );
         } catch (error) {
             console.error("Error adding product:", error);
@@ -88,13 +127,20 @@ class Service {
         }
     }
 
+    async addProduct(productData) {
+        return this.createProduct(productData);
+    }
+
     async updateProduct(productId, productData) {
         try {
+            const imageIds = this.#normalizeImageIds(productData.image_ids);
+            const { image_ids, ...cleanData } = productData;
+            
             return await this.databases.updateDocument(
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdproducts,
                 productId,
-                productData
+                { ...cleanData, image_ids: imageIds }
             );
         } catch (error) {
             console.error("Error updating product:", error);
@@ -118,11 +164,11 @@ class Service {
 
     // ==================== Auth Functions ====================
     async createAccount({ email, password, name }) {
+        let userAccount;
         try {
-            const userAccount = await this.account.create(ID.unique(), email, password, name);
+            userAccount = await this.account.create(ID.unique(), email, password, name);
             await this.account.createEmailPasswordSession(email, password);
             
-            // Ensure user document creation
             const userDoc = await this.databases.createDocument(
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdUsers,
@@ -137,9 +183,8 @@ class Service {
     
             return { ...userAccount, ...userDoc };
         } catch (error) {
-            // Delete account if document creation fails
             if (userAccount?.$id) {
-                await this.account.delete(userAccount.$id);
+                await this.account.delete(userAccount.$id).catch(() => {});
             }
             throw error;
         }
@@ -201,7 +246,6 @@ class Service {
                 userId
             );
         } catch (error) {
-            // Create missing user document
             if (error.code === 404) {
                 console.warn(`User document missing for ${userId}, creating default...`);
                 return await this.databases.createDocument(

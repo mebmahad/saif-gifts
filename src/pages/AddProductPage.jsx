@@ -9,9 +9,10 @@ export default function AddProductPage() {
     price: "",
     description: "",
     category: "",
-    image: null,
+    images: [],
   });
   const [loading, setLoading] = useState(false);
+  const [previewImages, setPreviewImages] = useState([]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -22,13 +23,26 @@ export default function AddProductPage() {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      // Create preview URLs
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      
       setFormData((prevData) => ({
         ...prevData,
-        image: file,
+        images: [...prevData.images, ...files],
       }));
+      
+      setPreviewImages(prev => [...prev, ...newPreviews]);
     }
+  };
+
+  const removeImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+    setPreviewImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -36,10 +50,9 @@ export default function AddProductPage() {
     setLoading(true);
 
     try {
-      let imageId = null;
-      if (formData.image) {
-        const uploadedFile = await service.uploadImage(formData.image);
-        imageId = uploadedFile.$id; // Get ID from response object
+      let imageIds = [];
+      if (formData.images.length > 0) {
+        imageIds = await service.uploadImages(formData.images);
       }
 
       await service.addProduct({
@@ -47,10 +60,10 @@ export default function AddProductPage() {
         price: parseFloat(formData.price),
         description: formData.description,
         category: formData.category,
-        image_id: imageId, // Correct field name
+        image_ids: imageIds // Array of image IDs
       });
 
-      navigate("/admin"); // Redirect to admin dashboard after adding product
+      navigate("/admin");
     } catch (error) {
       console.error("Error adding product:", error);
     } finally {
@@ -59,13 +72,13 @@ export default function AddProductPage() {
   };
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Add New Product</h1>
+    <div className="min-h-screen p-8 bg-gray-50">
+      <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <h1 className="text-3xl font-bold mb-8 text-gray-800">Add New Product</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Product Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               Product Name
             </label>
             <input
@@ -74,14 +87,14 @@ export default function AddProductPage() {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
               required
             />
           </div>
 
           {/* Product Price */}
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
               Price
             </label>
             <input
@@ -90,14 +103,16 @@ export default function AddProductPage() {
               name="price"
               value={formData.price}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary"
+              min="0"
+              step="0.01"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
               required
             />
           </div>
 
           {/* Product Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
               Description
             </label>
             <textarea
@@ -105,7 +120,7 @@ export default function AddProductPage() {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
               rows="4"
               required
             />
@@ -113,7 +128,7 @@ export default function AddProductPage() {
 
           {/* Product Category */}
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
               Category
             </label>
             <select
@@ -121,7 +136,7 @@ export default function AddProductPage() {
               name="category"
               value={formData.category}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
               required
             >
               <option value="" disabled>Select a category</option>
@@ -132,29 +147,60 @@ export default function AddProductPage() {
             </select>
           </div>
 
-          {/* Product Image */}
+          {/* Product Images */}
           <div>
-            <label htmlFor="image" className="block text-sm font-medium text-gray-700">
-              Product Image
+            <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-1">
+              Product Images
             </label>
             <input
               type="file"
-              id="image"
-              name="image"
+              id="images"
+              name="images"
               onChange={handleImageChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
               accept="image/*"
+              multiple
             />
+            
+            {/* Image Previews */}
+            {previewImages.length > 0 && (
+              <div className="mt-4 grid grid-cols-3 gap-4">
+                {previewImages.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}
-          <div>
+          <div className="pt-4">
             <button
               type="submit"
               disabled={loading}
-              className="bg-gift-primary text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              className="w-full bg-gift-primary text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-70"
             >
-              {loading ? "Adding Product..." : "Add Product"}
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Adding Product...
+                </span>
+              ) : "Add Product"}
             </button>
           </div>
         </form>

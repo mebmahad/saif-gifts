@@ -1,16 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import service from '../appwrite/config';
 import { useAuth } from '../context/AuthContext';
 
 const CheckoutPage = () => {
   const { cartItems, clearCart } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const [orderHistory, setOrderHistory] = useState([]);
+  
+  // Get product from navigation state if coming from "Buy Now"
+  const buyNowProduct = location.state?.product;
+  const displayItems = buyNowProduct ? [{ ...buyNowProduct, quantity: 1 }] : cartItems;
+
+  useEffect(() => {
+    const fetchOrderHistory = async () => {
+      if (user) {
+        try {
+          const orders = await service.getUserOrders(user.$id);
+          setOrderHistory(orders);
+        } catch (error) {
+          console.error('Error fetching order history:', error);
+        }
+      }
+    };
+    fetchOrderHistory();
+  }, [user]);
   
   // Calculate total price with null check
-  const subtotal = cartItems?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+  const subtotal = displayItems?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
   const taxRate = 0.1;
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
@@ -36,7 +56,7 @@ const CheckoutPage = () => {
     e.preventDefault();
     const orderDetails = {
       shippingDetails,
-      cart: cartItems, // Changed from cart to cartItems
+      cart: displayItems,
       subtotal,
       tax,
       totalAmount: total,
@@ -138,14 +158,11 @@ const CheckoutPage = () => {
             </button>
           </form>
         </div>
-
-        // Update the Order Summary section to use the new total calculation
-        return (
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
             <div className="space-y-4">
-              {cartItems.map((item) => ( // Changed from cart to cartItems
-                <div key={item.id} className="flex justify-between items-center">
+              {displayItems.map((item, index) => (
+                <div key={item.id || `item-${index}`} className="flex justify-between items-center">
                   <div>
                     <p className="font-semibold">{item.name}</p>
                     <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>

@@ -79,19 +79,28 @@ export default function Header() {
                             {showProfileMenu && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-50">
                                     <button
-                                        onClick={() => navigate('/profile')}
+                                        onClick={() => {
+                                            setShowProfileMenu(false);
+                                            navigate('/profile');
+                                        }}
                                         className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
                                     >
                                         Profile
                                     </button>
                                     <button
-                                        onClick={() => navigate('/orders')}
+                                        onClick={() => {
+                                            setShowProfileMenu(false);
+                                            navigate('/orders');
+                                        }}
                                         className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
                                     >
                                         Order History
                                     </button>
                                     <button
-                                        onClick={handleLogout}
+                                        onClick={() => {
+                                            setShowProfileMenu(false);
+                                            handleLogout();
+                                        }}
                                         className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
                                     >
                                         Logout

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import service from '../appwrite/config';
 import PlaceholderImage from '../components/PlaceholderImage';
+import SalesReport from './SalesReport';
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
@@ -9,6 +10,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('products');
   const navigate = useNavigate();
+  const [showSalesReport, setShowSalesReport] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -72,26 +74,33 @@ export default function AdminDashboard() {
       <div className="flex mb-6 space-x-4 border-b">
         <button
           className={`py-2 px-4 ${activeTab === 'products' ? 'border-b-2 border-gift-primary text-gift-primary' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('products')}
+          onClick={() => { setActiveTab('products'); setShowSalesReport(false); }}
         >
           Products
         </button>
         <button
           className={`py-2 px-4 ${activeTab === 'orders' ? 'border-b-2 border-gift-primary text-gift-primary' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('orders')}
+          onClick={() => { setActiveTab('orders'); setShowSalesReport(false); }}
         >
           Orders
         </button>
         <button
           className={`py-2 px-4 ${activeTab === 'users' ? 'border-b-2 border-gift-primary text-gift-primary' : 'text-gray-500'}`}
-          onClick={() => setActiveTab('users')}
+          onClick={() => { setActiveTab('users'); setShowSalesReport(false); }}
         >
           Users
         </button>
+        <button
+          className={`py-2 px-4 ${showSalesReport ? 'border-b-2 border-gift-primary text-gift-primary' : 'text-gray-500'}`}
+          onClick={() => { setShowSalesReport(true); setActiveTab(''); }}
+        >
+          Sales Reports
+        </button>
       </div>
 
-      {/* Products Tab */}
-      {activeTab === 'products' && (
+      {showSalesReport ? (
+        <SalesReport />
+      ) : activeTab === 'products' && (
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-semibold">Products Management</h2>
