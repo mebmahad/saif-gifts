@@ -1,18 +1,23 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import service from "../appwrite/config";
+import QRCodeModal from "../components/QRCodeModal";
 
 export default function AddProductPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     price: "",
+    costPrice: "",
+    quantity: "",
     description: "",
     category: "",
     images: [],
   });
   const [loading, setLoading] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [createdProduct, setCreatedProduct] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -55,15 +60,18 @@ export default function AddProductPage() {
         imageIds = await service.uploadImages(formData.images);
       }
 
-      await service.addProduct({
+      const newProduct = await service.addProduct({
         name: formData.name,
         price: parseFloat(formData.price),
+        costPrice: parseFloat(formData.costPrice),
+        quantity: parseInt(formData.quantity),
         description: formData.description,
         category: formData.category,
         image_ids: imageIds // Array of image IDs
       });
 
-      navigate("/admin");
+      setCreatedProduct(newProduct);
+      setShowQRModal(true);
     } catch (error) {
       console.error("Error adding product:", error);
     } finally {
@@ -73,6 +81,15 @@ export default function AddProductPage() {
 
   return (
     <div className="min-h-screen p-8 bg-gray-50">
+      {showQRModal && (
+        <QRCodeModal
+          product={createdProduct}
+          onClose={() => {
+            setShowQRModal(false);
+            navigate("/admin");
+          }}
+        />
+      )}
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold mb-8 text-gray-800">Add New Product</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -95,7 +112,7 @@ export default function AddProductPage() {
           {/* Product Price */}
           <div>
             <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-              Price
+              Selling Price
             </label>
             <input
               type="number"
@@ -105,6 +122,42 @@ export default function AddProductPage() {
               onChange={handleInputChange}
               min="0"
               step="0.01"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
+              required
+            />
+          </div>
+
+          {/* Cost Price */}
+          <div>
+            <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-1">
+              Cost Price
+            </label>
+            <input
+              type="number"
+              id="costPrice"
+              name="costPrice"
+              value={formData.costPrice}
+              onChange={handleInputChange}
+              min="0"
+              step="0.01"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
+              required
+            />
+          </div>
+
+          {/* Quantity */}
+          <div>
+            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity
+            </label>
+            <input
+              type="number"
+              id="quantity"
+              name="quantity"
+              value={formData.quantity}
+              onChange={handleInputChange}
+              min="0"
+              step="1"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
               required
             />

@@ -8,6 +8,8 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState({
     name: "",
     price: "",
+    costPrice: "",
+    quantity: "",
     description: "",
     category: "",
     existingImages: [],
@@ -33,6 +35,8 @@ export default function EditProductPage() {
         setFormData({
           name: product.name,
           price: product.price,
+          costPrice: product.costPrice || "",
+          quantity: product.quantity || "",
           description: product.description,
           category: product.category,
           existingImages,
@@ -103,6 +107,8 @@ export default function EditProductPage() {
       await service.updateProduct(productId, {
         name: formData.name,
         price: parseFloat(formData.price),
+        costPrice: parseFloat(formData.costPrice),
+        quantity: parseInt(formData.quantity),
         description: formData.description,
         category: formData.category,
         image_ids: allImageIds
@@ -147,7 +153,7 @@ export default function EditProductPage() {
           {/* Product Price */}
           <div>
             <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-              Price
+              Selling Price
             </label>
             <input
               type="number"
@@ -156,6 +162,40 @@ export default function EditProductPage() {
               onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               min="0"
               step="0.01"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
+              required
+            />
+          </div>
+
+          {/* Cost Price */}
+          <div>
+            <label htmlFor="costPrice" className="block text-sm font-medium text-gray-700 mb-1">
+              Cost Price
+            </label>
+            <input
+              type="number"
+              id="costPrice"
+              value={formData.costPrice}
+              onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
+              min="0"
+              step="0.01"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
+              required
+            />
+          </div>
+
+          {/* Quantity */}
+          <div>
+            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity
+            </label>
+            <input
+              type="number"
+              id="quantity"
+              value={formData.quantity}
+              onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+              min="0"
+              step="1"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gift-primary focus:border-transparent"
               required
             />

@@ -8,8 +8,11 @@ export default function ProductCard({ product }) {
     const navigate = useNavigate();
     const { addToCart } = useCart();
 
-    
+    // Get the first image URL or use default
     const imageUrl = service.getImagePreview(product.image_ids ? JSON.parse(product.image_ids)[0] : null);
+    
+    // Check if product is out of stock
+    const isOutOfStock = product.quantity <= 0;
     
 
     const handleImageError = (e) => {
@@ -44,18 +47,24 @@ export default function ProductCard({ product }) {
             </div>
 
             <div className="p-4 grid grid-cols-2 gap-3">
-                <button
-                    onClick={() => addToCart(product)}
-                    className="w-full bg-gift-primary text-white px-4 py-2.5 rounded-lg hover:bg-opacity-90 transition-colors duration-200"
-                >
-                    Add to Cart
-                </button>
-                <button
-                    onClick={() => navigate('/checkout', { state: { product } })}
-                    className="w-full bg-gift-primary text-white px-4 py-2.5 rounded-lg hover:bg-opacity-90 transition-colors duration-200"
-                >
-                    Buy Now
-                </button>
+                {isOutOfStock ? (
+                    <div className="col-span-2 text-red-500 font-semibold text-lg text-center">Sold Out</div>
+                ) : (
+                    <>
+                        <button
+                            onClick={() => addToCart(product)}
+                            className="w-full bg-gift-primary text-white px-4 py-2.5 rounded-lg hover:bg-opacity-90 transition-colors duration-200"
+                        >
+                            Add to Cart
+                        </button>
+                        <button
+                            onClick={() => navigate('/checkout', { state: { product } })}
+                            className="w-full bg-gift-primary text-white px-4 py-2.5 rounded-lg hover:bg-opacity-90 transition-colors duration-200"
+                        >
+                            Buy Now
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );

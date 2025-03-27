@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { useAuth } from './context/AuthContext';  // Add this import
 import CartPage from './pages/CartPage';
 import service from './appwrite/config';
@@ -17,6 +19,7 @@ import OrderHistory from './pages/OrderHistory';
 import Profile from './pages/Profile';
 import AddProductPage from './pages/AddProductPage';
 import ProductDetails from './pages/ProductDetails';
+import POSPage from './pages/POSPage';
 import { AuthProvider } from './context/AuthContext';
 import { PrivateRoute, PublicRoute, AdminRoute } from './components/ProtectedRoutes';
 
@@ -37,13 +40,25 @@ function App() {
                 <Route path="/invoice" element={<InvoicePage />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/orders" element={<OrderHistory />} />
-                <Route path="/admin/*" element={<AdminDashboard />} />
-                <Route path="/admin/edit-product/:productId" element={<EditProductPage />} />
-                <Route path="/admin/add-product" element={<AddProductPage />} />
+                <Route path="/admin/*" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
+                <Route path="/admin/edit-product/:id" element={<PrivateRoute><EditProductPage /></PrivateRoute>} />
+                <Route path="/admin/add-product" element={<PrivateRoute><AddProductPage /></PrivateRoute>} />
+                <Route path="/admin/pos" element={<PrivateRoute><POSPage /></PrivateRoute>} />
                 <Route path="/product/:productId" element={<ProductDetails />} />
               </Routes>
             </main>
             <Footer />
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
           </div>
         </CartProvider>
       </AuthProvider>

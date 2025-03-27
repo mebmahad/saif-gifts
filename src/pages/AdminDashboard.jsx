@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import service from '../appwrite/config';
 import PlaceholderImage from '../components/PlaceholderImage';
 import SalesReport from './SalesReport';
+import QRCodeModal from '../components/QRCodeModal';
 
 export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
@@ -11,6 +12,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
   const navigate = useNavigate();
   const [showSalesReport, setShowSalesReport] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -96,7 +99,23 @@ export default function AdminDashboard() {
         >
           Sales Reports
         </button>
+        <Link
+          to="/admin/pos"
+          className="py-2 px-4 text-gray-500 hover:text-gift-primary"
+        >
+          POS System
+        </Link>
       </div>
+
+      {showQRModal && (
+        <QRCodeModal
+          product={selectedProduct}
+          onClose={() => {
+            setShowQRModal(false);
+            setSelectedProduct(null);
+          }}
+        />
+      )}
 
       {showSalesReport ? (
         <SalesReport />
@@ -141,6 +160,15 @@ export default function AdminDashboard() {
                     className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                   >
                     Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setShowQRModal(true);
+                    }}
+                    className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 mr-2"
+                  >
+                    Generate QR
                   </button>
                   <button
                     onClick={() => handleDeleteProduct(product.$id)}
