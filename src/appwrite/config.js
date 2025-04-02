@@ -194,10 +194,7 @@ getImagePreview(fileId) {
     
             return { ...userAccount, ...userDoc };
         } catch (error) {
-            if (userAccount?.$id) {
-                await this.account.delete(userAccount.$id).catch(() => {});
-            }
-            throw error;
+            console.error("Error creating account:", error);
         }
     }
 
