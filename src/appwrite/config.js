@@ -174,33 +174,23 @@ getImagePreview(fileId) {
     }
 
     // ==================== Auth Functions ====================
-    async createAccount({ email, password, name }) {
-        let userAccount;
+    async createAccount({email, password, name}) {
         try {
-            userAccount = await this.account.create(ID.unique(), email, password, name);
-            await this.account.createEmailPasswordSession(email, password);
-            
-            const userDoc = await this.databases.createDocument(
-                conf.appwriteDatabaseId,
-                conf.appwriteCollectionIdUsers,
-                userAccount.$id,
-                {
-                    email,
-                    name,
-                    role: "customer",
-                    createdAt: new Date().toISOString()
-                }
-            );
-    
-            return { ...userAccount, ...userDoc };
+            const userAccount = await this.account.create(ID.unique(), email, password, name);
+            if (userAccount) {
+                // call another method
+                return this.login({email, password});
+            } else {
+               return  userAccount;
+            }
         } catch (error) {
-            console.error("Error creating account:", error);
+            throw error;
         }
     }
 
     async login(email, password) {
         try {
-            await this.account.createEmailSession(email, password);
+            await this.account.createEmailPasswordSession(email, password);
             const userAccount = await this.account.get();
             const userData = await this.getUserData(userAccount.$id);
             
