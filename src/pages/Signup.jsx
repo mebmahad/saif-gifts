@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { useNavigate } from "react";
+import { useHistory } from 'react-router-dom';
 import service from "../appwrite/config";
 
 export default function Signup() {
@@ -8,13 +8,13 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const history = useHistory();
 
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
       await service.createAccount({ email, password, name });
-      navigate("/login"); // Redirect to login after signup
+      history.push("/login"); // Redirect to login after signup
     } catch (error) {
       setError("Error creating account. Please try again.");
     }
