@@ -59,7 +59,7 @@ const POSScanner = () => {
   return (
     <div className="max-w-lg mx-auto p-4">
       <div className="mb-8">
-        <QrScanner
+        <QRScanner
           onDecode={handleScan}
           onError={handleError}
           constraints={{ facingMode: 'environment' }}
