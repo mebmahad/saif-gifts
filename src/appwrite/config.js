@@ -188,51 +188,34 @@ getImagePreview(fileId) {
         }
     }
 
-    async login(email, password) {
+    async login({email, password}) {
         try {
-            await this.account.createEmailPasswordSession(email, password);
-            const userAccount = await this.account.get();
-            const userData = await this.getUserData(userAccount.$id);
-            
-            return {
-                ...userAccount,
-                role: userData?.role || 'customer'
-            };
+            const session = await this.account.createEmailPasswordSession(email, password);
+            // Set the cookie after successful login
+            document.cookie = "yourCookieName=yourCookieValue; SameSite=None; Secure";
+            return session;
         } catch (error) {
-            console.error("Error logging in:", error);
-            if (error.type === 'too_many_requests') {
-                throw new Error('Too many attempts. Please try again later.');
-            }
-            throw new Error('Invalid email or password');
+            throw error;
         }
     }
 
     async logout() {
+
         try {
-            if (await this.checkSession()) {
-                await this.account.deleteSession('current');
-            }
-            this.currentSession = null;
-            return true;
+            await this.account.deleteSessions();
         } catch (error) {
-            console.error("Logout error:", error);
-            return false;
+            console.log("Appwrite serive :: logout :: error", error);
         }
     }
 
     async getCurrentUser() {
         try {
-            const userAccount = await this.account.get();
-            const userData = await this.getUserData(userAccount.$id);
-            return { 
-                ...userAccount,
-                role: userData?.role || 'customer',
-                name: userData?.name || 'User'
-            };
+            return await this.account.get();
         } catch (error) {
-            console.error("Error fetching current user:", error);
-            return null;
+            console.log("Appwrite serive :: getCurrentUser :: error", error);
         }
+
+        return null;
     }
 
     // ==================== User Management ====================
