@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrReader } from 'react-qr-reader';
+import { QrReader } from '@blackbox-vision/react-qr-reader';
 import service from '../appwrite/config';
 import QRCodeGenerator from './QRCodeGenerator';
 import { useCart } from '../context/CartContext';
@@ -14,8 +14,9 @@ const POSScanner = () => {
 
   const handleScan = async (result) => {
     if (result) {
+      const data = result?.text;
       try {
-        const productCode = result?.text;
+        const productCode = data;
         const product = await service.getProductByCode(productCode);
         if (product) {
           setScannedProduct(product);
@@ -63,6 +64,7 @@ const POSScanner = () => {
           onError={handleError}
           constraints={{ facingMode: 'environment' }}
           className="w-full aspect-square"
+          ViewFinder={({ children }) => <div className="border-2 border-gift-primary rounded-lg p-2">{children}</div>}
         />
       </div>
 

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import service from '../appwrite/config';
 import { useAuth } from '../context/AuthContext';
 
 const CheckoutPage = () => {
   const { cartItems, clearCart } = useCart();
-  const navigate = useNavigate();
+  const history = useHistory();
   const location = useLocation();
   const { user } = useAuth();
   const [orderHistory, setOrderHistory] = useState([]);
@@ -30,7 +31,11 @@ const CheckoutPage = () => {
   }, [user]);
   
   // Calculate total price with null check
-  const subtotal = displayItems?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+  const subtotal = displayItems?.reduce((sum, item) => {
+  const price = parseFloat(item.price);
+  const quantity = parseInt(item.quantity, 10);
+  return sum + (price * quantity);
+}, 0) || 0;
   const taxRate = 0.1;
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
@@ -73,7 +78,7 @@ const CheckoutPage = () => {
     }
 
     clearCart();
-    navigate('/invoice');
+    history.push('/invoice');
   };
 
   return (

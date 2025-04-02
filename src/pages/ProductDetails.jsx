@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useHistory } from "react-router-dom";
 import service from "../appwrite/config";
 import { useCart } from "../context/CartContext";
 import PlaceholderImage from "../components/PlaceholderImage";
 
 export default function ProductDetails() {
   const { productId } = useParams();
-  const navigate = useNavigate();
+  const history = useHistory();
   const { addToCart } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ export default function ProductDetails() {
   // Handle Add to Cart
   const handleAddToCart = () => {
     addToCart(product);
-    navigate("/cart");
+    history.push("/cart");
   };
 
   // Safe image error handler
@@ -189,7 +189,7 @@ export default function ProductDetails() {
                   Add to Cart
                 </button>
                 <button
-                  onClick={() => navigate('/checkout', { state: { product } })}
+                  onClick={() => history.push('/checkout', { state: { product } })}
                   className="w-full bg-gift-primary text-white px-6 py-3 rounded-lg hover:bg-opacity-90 transition-colors duration-200"
                 >
                   Buy Now

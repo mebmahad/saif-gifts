@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import service from '../appwrite/config';
 import { useAuth } from '../context/AuthContext';
 
 export default function Profile() {
-  const navigate = useNavigate();
+  const history = useHistory();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState([]);
@@ -12,11 +12,11 @@ export default function Profile() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      history.push('/login');
       return;
     }
     fetchRecentOrders();
-  }, [user, navigate]);
+  }, [user, history]);
 
   const fetchRecentOrders = async () => {
     try {
@@ -86,7 +86,7 @@ export default function Profile() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">Recent Orders</h2>
               <button
-                onClick={() => navigate('/orders')}
+                onClick={() => history.push('/orders')}
                 className="text-gift-primary hover:underline"
               >
                 View All
@@ -128,7 +128,7 @@ export default function Profile() {
                 View Cart
               </button>
               <button
-                onClick={() => navigate('/orders')}
+                onClick={() => history.push('/orders')}
                 className="bg-gift-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90"
               >
                 Order History

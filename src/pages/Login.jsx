@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import service from '../appwrite/config';
 
@@ -8,10 +8,16 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
-    
-    // Properly destructure setUser from useAuth
+    const history = useHistory();
     const { setUser } = useAuth();
+
+    const isMountedRef = React.useRef(true);
+
+    useEffect(() => {
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -20,15 +26,19 @@ export default function Login() {
 
         try {
             const user = await service.login(email, password);
-            if (user) {
-                setUser(user); // This will now work correctly
-                navigate('/');
+            if (isMountedRef.current && user) {
+                setUser(user);
+                history.push('/');
             }
         } catch (error) {
-            setError(error.message || 'Login failed. Please try again.');
-            console.error('Login error:', error);
+            if (isMountedRef.current) {
+                setError(error.message || 'Login failed. Please try again.');
+                console.error('Login error:', error);
+            }
         } finally {
-            setLoading(false);
+            if (isMountedRef.current) {
+                setLoading(false);
+            }
         }
     };
 

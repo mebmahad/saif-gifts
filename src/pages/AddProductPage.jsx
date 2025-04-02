@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import service from "../appwrite/config";
 import QRCodeModal from "../components/QRCodeModal";
 
 export default function AddProductPage() {
-  const navigate = useNavigate();
+  const history = useHistory();
   const [formData, setFormData] = useState({
     name: "",
     price: "",
@@ -86,7 +86,7 @@ export default function AddProductPage() {
           product={createdProduct}
           onClose={() => {
             setShowQRModal(false);
-            navigate("/admin");
+            history.push("/admin");
           }}
         />
       )}

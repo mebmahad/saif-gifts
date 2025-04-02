@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useHistory } from "react-router-dom";
 import service from '../appwrite/config';
 import PlaceholderImage from '../components/PlaceholderImage';
 import SalesReport from './SalesReport';
@@ -10,7 +11,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('products');
-  const navigate = useNavigate();
+  const history = useHistory();
   const [showSalesReport, setShowSalesReport] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -102,6 +103,7 @@ export default function AdminDashboard() {
         <Link
           to="/admin/pos"
           className="py-2 px-4 text-gray-500 hover:text-gift-primary"
+          onClick={() => history.push("/admin/pos")}
         >
           POS System
         </Link>
@@ -156,7 +158,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => navigate(`/admin/edit-product/${product.$id}`)}
+                    onClick={() => history.push(`/admin/edit-product/${product.$id}`)}
                     className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                   >
                     Edit

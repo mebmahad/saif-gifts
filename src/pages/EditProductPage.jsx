@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useHistory } from "react-router-dom";
 import service from "../appwrite/config";
 
 export default function EditProductPage() {
   const { productId } = useParams();
-  const navigate = useNavigate();
+  const history = useHistory();
+  
+  if (!productId) {
+    history.push('/admin');
+    return null;
+  }
+
   const [formData, setFormData] = useState({
     name: "",
     price: "",
@@ -22,32 +28,42 @@ export default function EditProductPage() {
     const fetchProduct = async () => {
       try {
         const product = await service.getProductById(productId);
+        if (!product) {
+          throw new Error('Product not found');
+        }
         
         // Parse existing images safely
         let existingImages = [];
         try {
-          existingImages = product.image_ids ? JSON.parse(product.image_ids) : [];
+          existingImages = product?.image_ids 
+            ? JSON.parse(product.image_ids)
+            : [];
         } catch (error) {
           console.error("Error parsing existing images:", error);
           existingImages = [];
         }
 
-        setFormData({
-          name: product.name,
-          price: product.price,
-          costPrice: product.costPrice || "",
-          quantity: product.quantity || "",
-          description: product.description,
-          category: product.category,
-          existingImages,
-          newImages: [],
-        });
+        if (product) {
+          setFormData({
+            name: product.name || '',
+            price: product.price || '',
+            costPrice: product.costPrice || "",
+            quantity: product.quantity || "",
+            description: product.description || "",
+            category: product.category || "",
+            existingImages,
+            newImages: [],
+          });
+        }
 
         // Create previews for existing images
-        const existingPreviews = existingImages.map(id => service.getImagePreview(id));
+        const existingPreviews = existingImages?.length > 0 
+          ? existingImages.map(id => service.getImagePreview(id))
+          : [];
         setPreviewImages(existingPreviews);
       } catch (error) {
         console.error("Error fetching product:", error);
+        history.push('/admin');
       } finally {
         setLoading(false);
       }
@@ -93,6 +109,12 @@ export default function EditProductPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!productId) {
+      history.push('/admin');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -114,9 +136,10 @@ export default function EditProductPage() {
         image_ids: allImageIds
       });
 
-      navigate("/admin");
+      history.push("/admin");
     } catch (error) {
       console.error("Error updating product:", error);
+      alert("Failed to update product. Please try again.");
     } finally {
       setLoading(false);
     }

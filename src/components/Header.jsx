@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useHistory, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import service from '../appwrite/config';
 
-export default function Header() {
-    const navigate = useNavigate();
+function Header() {
+    const history = useHistory();
+    const location = useLocation();
     const { user, updateUser } = useAuth();
     const { cartTotalItems } = useCart();
     const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -14,10 +15,10 @@ export default function Header() {
         try {
             await service.logout();
             updateUser();
-            navigate('/');
+            history.push('/');
         } catch (error) {
             console.error("Logout failed:", error);
-            navigate('/login');
+            history.push('/login');
         }
     };
 
@@ -81,7 +82,7 @@ export default function Header() {
                                     <button
                                         onClick={() => {
                                             setShowProfileMenu(false);
-                                            navigate('/profile');
+                                            history.push('/profile');
                                         }}
                                         className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
                                     >
@@ -90,7 +91,7 @@ export default function Header() {
                                     <button
                                         onClick={() => {
                                             setShowProfileMenu(false);
-                                            navigate('/orders');
+                                            history.push('/orders');
                                         }}
                                         className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
                                     >
@@ -129,3 +130,6 @@ export default function Header() {
         </header>
     );
 }
+
+
+export default Header;

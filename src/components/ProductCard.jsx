@@ -1,11 +1,11 @@
 import React from 'react';
 import service from '../appwrite/config';
 import { useCart } from '../context/CartContext';
-import PlaceholderImage from './PlaceholderImage';
-import { useNavigate, Link } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export default function ProductCard({ product }) {
-    const navigate = useNavigate();
+    const history = useHistory();
     const { addToCart } = useCart();
 
     // Get the first image URL or use default
@@ -58,7 +58,7 @@ export default function ProductCard({ product }) {
                             Add to Cart
                         </button>
                         <button
-                            onClick={() => navigate('/checkout', { state: { product } })}
+                            onClick={() => history.push('/checkout', { state: { product } })}
                             className="w-full bg-gift-primary text-white px-4 py-2.5 rounded-lg hover:bg-opacity-90 transition-colors duration-200"
                         >
                             Buy Now

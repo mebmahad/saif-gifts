@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useAuth } from './context/AuthContext';  // Add this import
@@ -31,21 +31,21 @@ function App() {
           <div className="min-h-screen flex flex-col">
             <Header />
             <main className="flex-grow">
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/" element={<Home />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/invoice" element={<InvoicePage />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/orders" element={<OrderHistory />} />
-                <Route path="/admin/*" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
-                <Route path="/admin/edit-product/:id" element={<PrivateRoute><EditProductPage /></PrivateRoute>} />
-                <Route path="/admin/add-product" element={<PrivateRoute><AddProductPage /></PrivateRoute>} />
-                <Route path="/admin/pos" element={<PrivateRoute><POSPage /></PrivateRoute>} />
-                <Route path="/product/:productId" element={<ProductDetails />} />
-              </Routes>
+              <Switch>
+                <Route path="/login" component={Login} />
+                <Route path="/signup" component={Signup} />
+                <Route exact path="/" component={Home} />
+                <Route path="/cart" component={CartPage} />
+                <Route path="/checkout" component={CheckoutPage} />
+                <Route path="/invoice" component={InvoicePage} />
+                <Route path="/profile" component={Profile} />
+                <Route path="/orders" component={OrderHistory} />
+                <Route path="/admin/edit-product/:id" render={() => <PrivateRoute><EditProductPage /></PrivateRoute>} />
+                <Route path="/admin/add-product" render={() => <PrivateRoute><AddProductPage /></PrivateRoute>} />
+                <Route path="/admin/pos" render={() => <PrivateRoute><POSPage /></PrivateRoute>} />
+                <Route path="/admin" render={() => <PrivateRoute><AdminDashboard /></PrivateRoute>} />
+                <Route path="/product/:productId" component={ProductDetails} />
+              </Switch>
             </main>
             <Footer />
             <ToastContainer

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { PDFDocument, rgb } from 'pdf-lib';
 import { saveAs } from 'file-saver';
@@ -6,6 +6,13 @@ import { toast } from 'react-toastify';
 
 const QRCodeGenerator = ({ productData, quantity, onSuccess }) => {
   const [generating, setGenerating] = useState(false);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const generateQRCodes = async () => {
     if (generating) return;
@@ -18,7 +25,7 @@ const QRCodeGenerator = ({ productData, quantity, onSuccess }) => {
 
       // Create PDF document
       const pdfDoc = await PDFDocument.create();
-      const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
+      let page = pdfDoc.addPage([595.28, 841.89]); // A4 size
       const { width } = page.getSize();
 
       // QR code size (2cm = ~56.7 pixels at 72 DPI)
@@ -36,10 +43,13 @@ const QRCodeGenerator = ({ productData, quantity, onSuccess }) => {
         width: qrSize,
         margin: 0,
       });
-      const qrDataUrl = canvas.toDataURL();
-
-      // Convert data URL to bytes
-      const qrImageBytes = await fetch(qrDataUrl).then(res => res.arrayBuffer());
+      if (!mounted.current) return;
+      
+      // Convert canvas directly to bytes
+      const blob = await new Promise(resolve => canvas.toBlob(resolve));
+      const qrImageBytes = await blob.arrayBuffer();
+      if (!mounted.current) return;
+      
       const qrImage = await pdfDoc.embedPng(qrImageBytes);
 
       // Calculate positions and draw QR codes
@@ -72,18 +82,25 @@ const QRCodeGenerator = ({ productData, quantity, onSuccess }) => {
           currentX += (qrSize + margin);
         }
       }
-
+      
+      if (!mounted.current) return;
       // Save and download PDF
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      saveAs(blob, `qrcodes-${productData.name}.pdf`);
-      toast.success('QR codes generated successfully!');
-      if (onSuccess) onSuccess();
+      const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+      saveAs(pdfBlob, `qrcodes-${productData.name}.pdf`);
+      if (mounted.current) {
+        toast.success('QR codes generated successfully!');
+        if (onSuccess) onSuccess();
+      }
     } catch (error) {
-      console.error('Error generating QR codes:', error);
-      toast.error('Failed to generate QR codes');
+      if (mounted.current) {
+        console.error('Error generating QR codes:', error);
+        toast.error('Failed to generate QR codes');
+      }
     } finally {
-      setGenerating(false);
+      if (mounted.current) {
+        setGenerating(false);
+      }
     }
   };
 

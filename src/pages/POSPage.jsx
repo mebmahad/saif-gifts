@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import POSScanner from '../components/POSScanner';
 import { useCart } from '../context/CartContext';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 const POSPage = () => {
   const { cartItems, addToCart, removeFromCart, clearCart } = useCart();
-  const navigate = useNavigate();
+  const history = useHistory();
 
   // Calculate totals
   const subtotal = cartItems?.reduce((sum, item) => sum + item.price * item.quantity, 0) || 0;
@@ -14,7 +14,7 @@ const POSPage = () => {
   const total = subtotal + tax;
 
   const handleCheckout = () => {
-    navigate('/checkout');
+    history.push('/checkout');
   };
 
   return (

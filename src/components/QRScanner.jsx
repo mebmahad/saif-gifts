@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrReader } from 'react-qr-reader';
+import { QrReader } from '@blackbox-vision/react-qr-reader';
 import service from '../appwrite/config';
 
 const QRScanner = () => {
@@ -64,6 +64,7 @@ const QRScanner = () => {
           onError={handleError}
           constraints={{ facingMode: 'environment' }}
           className="w-full aspect-square"
+          ViewFinder={({ children }) => <div className="border-2 border-gift-primary rounded-lg p-2">{children}</div>}
         />
       </div>
 

@@ -54,12 +54,13 @@ class Service {
         }
     }
 
-    async getProductById(productId) {
+    async getProductById(documentId) {
+        if (!documentId) throw new Error('Missing document ID');
         try {
             return await this.databases.getDocument(
                 conf.appwriteDatabaseId,
                 conf.appwriteCollectionIdproducts,
-                productId
+                documentId
             );
         } catch (error) {
             console.error("Error fetching product:", error);
@@ -300,7 +301,7 @@ getImagePreview(fileId) {
                 ID.unique(),
                 {
                     userId,
-                    total: Math.round(orderDetails.totalAmount),
+                    total: Math.round(orderDetails.totalAmount * 100)/100, // Properly format to 2 decimal places
                     status: 'pending',
                     shippingDetails: JSON.stringify(orderDetails.shippingDetails),
                     products: JSON.stringify(orderDetails.cart)

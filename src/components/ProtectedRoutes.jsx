@@ -1,26 +1,31 @@
-import { Navigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export function PrivateRoute({ children }) {
+  const history = useHistory();
   const { user } = useAuth();
   if (!user) {
-    return <Navigate to="/login" replace />;
+    history.push('/login');
   }
   return children;
 }
 
 export function PublicRoute({ children }) {
+  const history = useHistory();
   const { user } = useAuth();
   if (user) {
-    return <Navigate to="/" replace />;
+    history.push('/');
+    return null;
   }
   return children;
 }
 
 export function AdminRoute({ children }) {
+  const history = useHistory();
   const { user } = useAuth();
   if (!user || user.role !== 'admin') {
-    return <Navigate to="/" replace />;
+    history.push('/');
+    return null;
   }
   return children;
 }
