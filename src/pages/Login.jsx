@@ -24,22 +24,13 @@ export default function Login() {
         setLoading(true);
         setError('');
 
-        try {
-            const user = await service.login(email, password);
-            if (isMountedRef.current && user) {
-                setUser(user);
+        
+            const session = await service.login(email, password)
+            if (session) {
+                setUser(session);
                 history.push('/');
             }
-        } catch (error) {
-            if (isMountedRef.current) {
-                setError(error.message || 'Login failed. Please try again.');
-                console.error('Login error:', error);
-            }
-        } finally {
-            if (isMountedRef.current) {
-                setLoading(false);
-            }
-        }
+        setLoading(false);
     };
 
     return (
