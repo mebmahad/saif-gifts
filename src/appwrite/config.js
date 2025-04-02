@@ -29,6 +29,16 @@ class Service {
         return '[]';
     }
 
+    // ==================== Account Management ====================
+    async deleteAccount() {
+        try {
+            return await this.account.delete();
+        } catch (error) {
+            console.error("Appwrite service :: deleteAccount :: error", error);
+            throw error;
+        }
+    }
+
     // ==================== Session Management ====================
     async checkSession() {
         try {
