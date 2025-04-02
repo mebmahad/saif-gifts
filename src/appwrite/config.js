@@ -32,7 +32,7 @@ class Service {
     // ==================== Account Management ====================
     async deleteAccount() {
         try {
-            return await this.account.deleteSessions();
+            return await this.account.delete();
         } catch (error) {
             console.error("Appwrite service :: deleteAccount :: error", error);
             throw error;
@@ -174,48 +174,78 @@ getImagePreview(fileId) {
     }
 
     // ==================== Auth Functions ====================
-    async createAccount({email, password, name}) {
+    async createAccount({ email, password, name }) {
+        let userAccount;
         try {
-            const userAccount = await this.account.create(ID.unique(), email, password, name);
-            if (userAccount) {
-                // call another method
-                return this.login({email, password});
-            } else {
-               return  userAccount;
-            }
+            userAccount = await this.account.create(ID.unique(), email, password, name);
+            await this.account.createEmailPasswordSession(email, password);
+            
+            const userDoc = await this.databases.createDocument(
+                conf.appwriteDatabaseId,
+                conf.appwriteCollectionIdUsers,
+                userAccount.$id,
+                {
+                    email,
+                    name,
+                    role: "customer",
+                    createdAt: new Date().toISOString()
+                }
+            );
+    
+            return { ...userAccount, ...userDoc };
         } catch (error) {
+            if (userAccount?.$id) {
+                await this.account.delete(userAccount.$id).catch(() => {});
+            }
             throw error;
         }
     }
 
-    async login({email, password}) {
+    async login(email, password) {
         try {
-            const session = await this.account.createEmailSession(email, password);
-            // Set the cookie after successful login
-            document.cookie = "yourCookieName=yourCookieValue; SameSite=None; Secure";
-            return session;
+            await this.account.createEmailSession(email, password);
+            const userAccount = await this.account.get();
+            const userData = await this.getUserData(userAccount.$id);
+            
+            return {
+                ...userAccount,
+                role: userData?.role || 'customer'
+            };
         } catch (error) {
-            throw error;
+            console.error("Error logging in:", error);
+            if (error.type === 'too_many_requests') {
+                throw new Error('Too many attempts. Please try again later.');
+            }
+            throw new Error('Invalid email or password');
         }
     }
 
     async logout() {
-
         try {
-            await this.account.deleteSessions();
+            if (await this.checkSession()) {
+                await this.account.deleteSession('current');
+            }
+            this.currentSession = null;
+            return true;
         } catch (error) {
-            console.log("Appwrite serive :: logout :: error", error);
+            console.error("Logout error:", error);
+            return false;
         }
     }
 
     async getCurrentUser() {
         try {
-            return await this.account.get();
+            const userAccount = await this.account.get();
+            const userData = await this.getUserData(userAccount.$id);
+            return { 
+                ...userAccount,
+                role: userData?.role || 'customer',
+                name: userData?.name || 'User'
+            };
         } catch (error) {
-            console.log("Appwrite serive :: getCurrentUser :: error", error);
+            console.error("Error fetching current user:", error);
+            return null;
         }
-
-        return null;
     }
 
     // ==================== User Management ====================
