@@ -13,10 +13,11 @@ export default function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      await service.createAccount({ email, password, name });
-      history.push("/login"); // Redirect to login after signup
+      const account = await service.createAccount({ email, password, name });
+      await service.login(email, password);
+      history.push("/");
     } catch (error) {
-      setError("Error creating account. Please try again.");
+      setError(error.message || "Error creating account. Please try again.");
     }
   };
 

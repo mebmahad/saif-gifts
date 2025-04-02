@@ -193,7 +193,7 @@ getImagePreview(fileId) {
 
     async login(email, password) {
         try {
-            await this.account.createEmailPasswordSession(email, password);
+            await this.account.createEmailSession(email, password);
             const userAccount = await this.account.get();
             const userData = await this.getUserData(userAccount.$id);
             
