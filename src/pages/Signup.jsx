@@ -14,13 +14,9 @@ export default function Signup() {
     e.preventDefault();
     try {
       const account = await service.createAccount({ email, password, name });
-      try {
+     
         await service.login(email, password);
         history.push("/");
-      } catch (loginError) {
-        await service.deleteAccount(account.$id);
-        throw loginError;
-      }
     } catch (error) {
       setError(error.message || "Error creating account. Please try again.");
     }

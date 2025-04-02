@@ -32,7 +32,7 @@ class Service {
     // ==================== Account Management ====================
     async deleteAccount() {
         try {
-            return await this.account.delete();
+            return await this.account.deleteSessions();
         } catch (error) {
             console.error("Appwrite service :: deleteAccount :: error", error);
             throw error;
