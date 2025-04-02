@@ -190,7 +190,7 @@ getImagePreview(fileId) {
 
     async login({email, password}) {
         try {
-            const session = await this.account.createEmailPasswordSession(email, password);
+            const session = await this.account.createEmailSession(email, password);
             // Set the cookie after successful login
             document.cookie = "yourCookieName=yourCookieValue; SameSite=None; Secure";
             return session;
