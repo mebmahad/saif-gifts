@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { QrReader } from '@blackbox-vision/react-qr-reader';
+import { QrScanner } from 'react-qr-scanner'
 import service from '../appwrite/config';
 
 const QRScanner = () => {
@@ -60,7 +60,7 @@ const QRScanner = () => {
     <div className="max-w-lg mx-auto p-4">
       <div className="mb-8">
         <QrReader
-          onResult={handleScan}
+          onDecode={handleScan}
           onError={handleError}
           constraints={{ facingMode: 'environment' }}
           className="w-full aspect-square"
